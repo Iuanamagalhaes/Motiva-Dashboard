@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Motiva | Monitoramento de Crescimento de Grama</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+<style>
+  :root{
+    --purple: #5B2FE8;
+    --purple-dark: #4318C9;
+    --purple-bg: #F1EDFF;
+    --purple-border: #E4DEFB;
+    --ink: #1B1B29;
+    --ink-soft: #4B4B5A;
+    --muted: #9A99A8;
+    --page-bg: #F6F5FB;
+    --card-border: #ECE9F7;
+    --red: #E13333;
+    --red-bg: #FDE9E9;
+    --orange: #F0900A;
+    --orange-bg: #FEF1DD;
+    --yellow: #E6B800;
+    --green: #22A85E;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+    background: var(--page-bg);
+    color: var(--ink);
+    min-height:100vh;
+  }
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding: 18px 32px;
+    background:#fff;
+    border-bottom:1px solid var(--card-border);
+  }
+  .logo{display:flex; align-items:center; gap:8px; font-weight:700; font-size:20px; letter-spacing:-0.3px;}
+  .logo svg{display:block;}
+  .header-date{
+    display:flex; align-items:center; gap:8px;
+    color: var(--ink-soft); font-size:14px;
+    position:absolute; left:50%; transform:translateX(-50%);
+  }
+  .header-date svg{color:var(--purple); width:16px; height:16px;}
+  header{position:relative;}
+
+  main{
+    padding: 24px 32px 40px;
+    display:grid;
+    grid-template-columns: 1.62fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 20px;
+    max-width: 1500px;
+    margin: 0 auto;
+  }
+
+  .card{
+    background:#fff;
+    border:1px solid var(--card-border);
+    border-radius:16px;
+    padding: 20px 22px;
+    box-shadow: 0 1px 2px rgba(20,10,60,0.03);
+  }
+  .card-map{ grid-column:1; grid-row: 1 / span 2; display:flex; flex-direction:column;}
+  .card-cal{ grid-column:2; grid-row:1;}
+  .card-rank{ grid-column:2; grid-row:2;}
+
+  .card-title{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:16px;
+  }
+  .card-title-left{display:flex; align-items:center; gap:8px; font-weight:600; font-size:15px;}
+  .card-title-left svg{width:18px; height:18px; flex-shrink:0;}
+  .card-title-left.dark svg{color:#26263A;}
+  .card-title-left.violet svg{color:var(--purple);}
+
+  .month-picker{
+    display:flex; align-items:center; gap:6px;
+    border:1px solid var(--purple-border);
+    color:var(--purple);
+    font-size:13px; font-weight:500;
+    padding:5px 10px; border-radius:8px;
+    cursor:default;
+    background:#fff;
+  }
+  .month-picker svg{width:12px; height:12px;}
+
+  #map{
+    flex:1;
+    min-height: 560px;
+    border-radius: 12px;
+    overflow:hidden;
+    border:1px solid var(--card-border);
+  }
+  .map-legend{
+    display:flex; align-items:center; gap:22px;
+    margin-top:14px; font-size:13px; color:var(--ink-soft);
+  }
+  .map-legend span{display:flex; align-items:center; gap:6px;}
+  .dot{width:10px; height:10px; border-radius:50%; display:inline-block;}
+  .dot.baixa{background:var(--green);}
+  .dot.media{background:var(--yellow);}
+  .dot.alta{background:var(--red);}
+  .town-label{
+    font-size:11px; font-weight:600; color:#5A5A6B;
+    text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff;
+    white-space:nowrap;
+  }
+  .leaflet-tooltip.town-tooltip{
+    background:transparent; border:none; box-shadow:none; padding:0 0 0 6px;
+  }
+
+  .cal-body{ display:flex; gap:18px; }
+  .cal-grid{ flex: 1.35; }
+  .cal-weekdays, .cal-days{
+    display:grid; grid-template-columns: repeat(7, 1fr);
+    text-align:center;
+  }
+  .cal-weekdays div{ font-size:11px; font-weight:600; color:var(--muted); padding-bottom:8px;}
+  .cal-days div.day{
+    position:relative;
+    font-size:13px;
+    padding:6px 0 10px;
+    color: var(--ink);
+    cursor:pointer;
+    border-radius:8px;
+  }
+  .cal-days div.day:hover{ background:var(--purple-bg); }
+  .cal-days div.day.other-month{ color:#D2D0E0; cursor:default; }
+  .cal-days div.day.other-month:hover{ background:none; }
+  .cal-days div.day .num{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:24px; height:24px; border-radius:50%;
+  }
+  .cal-days div.day.selected .num{ background:var(--purple); color:#fff; font-weight:600; }
+  .cal-days div.day .dotmark{
+    position:absolute; bottom:2px; left:50%; transform:translateX(-50%);
+    width:4px; height:4px; border-radius:50%; background:var(--purple);
+  }
+  .cal-days div.day.other-month .dotmark{ background:#D2D0E0; }
+
+  .cal-side{
+    flex:1;
+    border:1px solid var(--purple-border);
+    border-radius:12px;
+    padding:12px;
+    background: #FBFAFF;
+    display:flex; flex-direction:column;
+    min-width: 150px;
+  }
+  .cal-side-title{ font-size:11px; font-weight:600; color:var(--ink-soft); margin-bottom:10px;}
+  .cal-side-title .sel-date{ color:var(--purple); }
+  .maint-item{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:8px;
+    background:#fff;
+    border:1px solid var(--card-border);
+    border-radius:8px;
+    padding:7px 9px;
+    margin-bottom:7px;
+    font-size:11.5px;
+  }
+  .maint-item .km{font-weight:600; color:var(--ink);}
+  .pill{
+    font-size:10px; font-weight:700; padding:3px 8px; border-radius:20px;
+    white-space:nowrap;
+  }
+  .pill.critico{ background:var(--red); color:#fff; }
+  .pill.alto{ background:var(--orange); color:#fff; }
+  .pill.medio{ background:#FFF3CC; color:#8A6D00; }
+  .pill.baixo{ background:#DFF6E8; color:#146A3A; }
+  .empty-note{ font-size:12px; color:var(--muted); padding:8px 2px; }
+
+  .upcoming-title{ font-size:12px; font-weight:700; color:var(--purple); margin: 16px 0 10px;}
+  .upcoming-row{ display:flex; gap:10px; flex-wrap:wrap; }
+  .upcoming-card{
+    flex:1; min-width:78px;
+    border:1px solid var(--purple-border);
+    border-radius:10px;
+    padding:10px 8px;
+    text-align:center;
+  }
+  .upcoming-card .d{ font-weight:700; color:var(--purple); font-size:13px;}
+  .upcoming-card .c{ font-size:10.5px; color:var(--muted); margin-top:3px;}
+
+  table{ width:100%; border-collapse:collapse; }
+  thead th{
+    text-align:left; font-size:11.5px; color:var(--muted); font-weight:600;
+    padding: 4px 8px 10px; border-bottom:1px solid var(--card-border);
+  }
+  tbody td{ padding:12px 8px; font-size:13px; border-bottom:1px solid #F4F3FA; }
+  tbody tr:last-child td{ border-bottom:none; }
+  .pos-badge{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:22px; height:22px; border-radius:6px;
+    background:var(--purple); color:#fff; font-weight:700; font-size:12px;
+  }
+  .pos-badge.gray{ background:#8B899C; }
+
+  @media (max-width: 980px){
+    main{ grid-template-columns: 1fr; }
+    .card-map, .card-cal, .card-rank{ grid-column:1; grid-row:auto; }
+    .header-date{ position:static; transform:none; margin-top:6px;}
+    header{ flex-direction:column; align-items:flex-start; gap:4px;}
+    .cal-body{ flex-direction:column; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <img src="./assets/motiva-logo.png" alt="motiva-logo">
+  </div>
+  <div class="header-date">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/>
+      <rect x="3" y="4" width="18" height="18" rx="3"/><line x1="3" y1="10" x2="21" y2="10"/>
+    </svg>
+    <span id="headerDate">17 de Agosto, 2026</span>
+  </div>
+  <div style="width:26px;"></div>
+</header>
+
+<main>
+
+  <section class="card card-map">
+    <div class="card-title">
+      <div class="card-title-left dark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2V6z"/><path d="M9 4v14"/><path d="M15 6v18"/>
+        </svg>
+        Mapa de Criticidade por Trecho
+      </div>
+    </div>
+    <div id="map"></div>
+    <div class="map-legend">
+      <span><i class="dot baixa"></i> Baixa</span>
+      <span><i class="dot media"></i> Média</span>
+      <span><i class="dot alta"></i> Alta</span>
+    </div>
+  </section>
+
+  <section class="card card-cal">
+    <div class="card-title">
+      <div class="card-title-left violet">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/>
+          <rect x="3" y="4" width="18" height="18" rx="3"/><line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        Calendário de Manutenções
+      </div>
+      <div class="month-picker">
+        Agosto 2026
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+
+    <div class="cal-body">
+      <div class="cal-grid">
+        <div class="cal-weekdays">
+          <div>DOM</div><div>SEG</div><div>TER</div><div>QUA</div><div>QUI</div><div>SEX</div><div>SÁB</div>
+        </div>
+        <div class="cal-days" id="calDays"></div>
+      </div>
+
+      <div class="cal-side">
+        <div class="cal-side-title">Manutenções do dia <span class="sel-date" id="sideDate">17/08</span></div>
+        <div id="maintList"></div>
+      </div>
+    </div>
+
+    <div class="upcoming-title">Próximas datas</div>
+    <div class="upcoming-row" id="upcomingRow"></div>
+  </section>
+
+  <section class="card card-rank">
+    <div class="card-title">
+      <div class="card-title-left violet">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2l1.6 3.3 3.6.5-2.6 2.5.6 3.6L12 10.2 8.8 11.9l.6-3.6-2.6-2.5 3.6-.5L12 2z"/>
+          <line x1="3" y1="20" x2="21" y2="20"/>
+          <rect x="5" y="14" width="4" height="6"/><rect x="10" y="10" width="4" height="10"/><rect x="15" y="14" width="4" height="6"/>
+        </svg>
+        Ranking de Criticidade
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Posição</th><th>Trecho (Km)</th><th>Altura Média</th><th>Status</th></tr>
+      </thead>
+      <tbody id="rankBody"></tbody>
+    </table>
+  </section>
+
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script>
+
+function fetchMaintenanceData(){
+  return {
+    '2026-08-04': [{ trecho:'KM 92 - KM 96', status:'medio' }],
+    '2026-08-14': [{ trecho:'KM 47 - KM 51', status:'alto' }],
+    '2026-08-17': [
+      { trecho:'KM 35 - KM 40', status:'critico' },
+      { trecho:'KM 58 - KM 62', status:'alto' },
+      { trecho:'KM 78 - KM 83', status:'alto' },
+    ],
+    '2026-08-19': [
+      { trecho:'KM 102 - KM 106', status:'critico' },
+      { trecho:'KM 20 - KM 24', status:'medio' },
+    ],
+    '2026-08-26': [{ trecho:'KM 12 - KM 15', status:'alto' }],
+    '2026-08-27': [{ trecho:'KM 66 - KM 70', status:'medio' }],
+    '2026-08-31': [
+      { trecho:'KM 8 - KM 11', status:'baixo' },
+      { trecho:'KM 90 - KM 95', status:'medio' },
+      { trecho:'KM 44 - KM 48', status:'alto' },
+    ],
+    '2026-09-10': [{ trecho:'KM 55 - KM 59', status:'alto' }],
+    '2026-09-22': [
+      { trecho:'KM 30 - KM 34', status:'critico' },
+      { trecho:'KM 70 - KM 74', status:'medio' },
+    ],
+  };
+}
+
+function fetchRankingData(){
+  return [
+    { pos:1, trecho:'KM 102 - KM 106', altura:'38,5 cm', status:'critico' },
+    { pos:2, trecho:'KM 35 - KM 40',   altura:'32,1 cm', status:'critico' },
+    { pos:3, trecho:'KM 58 - KM 62',   altura:'28,7 cm', status:'alto' },
+    { pos:4, trecho:'KM 78 - KM 82',   altura:'24,3 cm', status:'alto' },
+    { pos:5, trecho:'KM 12 - KM 15',   altura:'21,6 cm', status:'alto' },
+  ];
+}
+
+function fetchRouteData(){
+  return [
+    { status:'media', coords: [
+        [-23.6013,-51.6414], [-23.5900,-51.6280], [-23.5760,-51.6120], [-23.5620,-51.5980]
+    ]},
+    { status:'alta', coords: [
+        [-23.5620,-51.5980], [-23.5470,-51.5820], [-23.5320,-51.5660], [-23.5150,-51.5480],
+        [-23.4990,-51.5300], [-23.4850,-51.5130]
+    ]},
+    { status:'alta', coords: [
+        [-23.4850,-51.5130], [-23.4720,-51.4970], [-23.4600,-51.4820]
+    ]},
+    { status:'media', coords: [
+        [-23.4600,-51.4820], [-23.4520,-51.4680], [-23.4460,-51.4540]
+    ]},
+    { status:'baixa', coords: [
+        [-23.4460,-51.4540], [-23.4405,-51.4380], [-23.4380,-51.4230]
+    ]},
+  ];
+}
+
+const statusColor = { baixa:'#22A85E', media:'#E6B800', alta:'#E13333' };
+const pillClass = { critico:'critico', alto:'alto', medio:'medio', baixo:'baixo' };
+const pillLabel = { critico:'Crítico', alto:'Alto', medio:'Médio', baixo:'Baixo' };
+
+const maintenanceData = fetchMaintenanceData();
+const rankingData = fetchRankingData();
+const routeData = fetchRouteData();
+
+let selectedDate = '2026-08-17';
+
+function pad(n){ return n.toString().padStart(2,'0'); }
+
+function renderCalendar(){
+  const year = 2026, month = 7; 
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+  const cells = [];
+  for(let i=firstDay-1; i>=0; i--){
+    cells.push({ day: daysInPrevMonth-i, other:true });
+  }
+  for(let d=1; d<=daysInMonth; d++){
+    cells.push({ day:d, other:false, key:`${year}-${pad(month+1)}-${pad(d)}` });
+  }
+  let nextDay = 1;
+  while(cells.length % 7 !== 0){
+    cells.push({ day: nextDay++, other:true });
+  }
+
+  const calDays = document.getElementById('calDays');
+  calDays.innerHTML = '';
+  cells.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'day' + (c.other ? ' other-month' : '') + (c.key===selectedDate ? ' selected' : '');
+    const hasMaint = c.key && maintenanceData[c.key];
+    div.innerHTML = `<span class="num">${c.day}</span>${hasMaint ? '<span class="dotmark"></span>' : ''}`;
+    if(!c.other){
+      div.addEventListener('click', () => {
+        selectedDate = c.key;
+        renderCalendar();
+        renderMaintList();
+        renderUpcoming();
+        renderHeaderDate();
+      });
+    }
+    calDays.appendChild(div);
+  });
+}
+
+function formatShort(dateKey){
+  const [y,m,d] = dateKey.split('-');
+  return `${d}/${m}`;
+}
+function formatLong(dateKey){
+  const meses = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  const [y,m,d] = dateKey.split('-').map(Number);
+  return `${d} de ${meses[m-1].charAt(0).toUpperCase()+meses[m-1].slice(1)}, ${y}`;
+}
+
+function renderMaintList(){
+  document.getElementById('sideDate').textContent = formatShort(selectedDate);
+  const list = maintenanceData[selectedDate] || [];
+  const el = document.getElementById('maintList');
+  if(list.length === 0){
+    el.innerHTML = '<div class="empty-note">Nenhuma manutenção agendada.</div>';
+    return;
+  }
+  el.innerHTML = list.map(m => `
+    <div class="maint-item">
+      <span class="km">${m.trecho}</span>
+      <span class="pill ${pillClass[m.status]}">${pillLabel[m.status]}</span>
+    </div>
+  `).join('');
+}
+
+function renderUpcoming(){
+  const upcoming = Object.keys(maintenanceData)
+    .filter(k => k > selectedDate)
+    .sort()
+    .slice(0, 5);
+  const row = document.getElementById('upcomingRow');
+  row.innerHTML = upcoming.map(k => `
+    <div class="upcoming-card">
+      <div class="d">${formatShort(k)}</div>
+      <div class="c">${maintenanceData[k].length} Trecho${maintenanceData[k].length>1?'s':''}</div>
+    </div>
+  `).join('');
+}
+
+function renderHeaderDate(){
+  document.getElementById('headerDate').textContent = formatLong(selectedDate);
+}
+
+function renderRanking(){
+  const body = document.getElementById('rankBody');
+  body.innerHTML = rankingData.map(r => `
+    <tr>
+      <td><span class="pos-badge ${r.pos>2?'gray':''}">${r.pos}</span></td>
+      <td>${r.trecho}</td>
+      <td>${r.altura}</td>
+      <td><span class="pill ${pillClass[r.status]}">${pillLabel[r.status]}</span></td>
+    </tr>
+  `).join('');
+}
+
+function renderMap(){
+  const map = L.map('map', { scrollWheelZoom:false }).setView([-23.51, -51.52], 10.3);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  routeData.forEach(seg => {
+    L.polyline(seg.coords, {
+      color: statusColor[seg.status],
+      weight: 5,
+      lineCap: 'round'
+    }).addTo(map);
+
+    seg.coords.forEach((pt, idx) => {
+      L.circleMarker(pt, {
+        radius: 4,
+        weight: 2,
+        color: statusColor[seg.status],
+        fillColor: '#fff',
+        fillOpacity: 1
+      }).addTo(map);
+    });
+  });
+
+  const towns = [
+    { name:'Jandaia do Sul', pos:[-23.6013,-51.6414] },
+    { name:'Mandaguari', pos:[-23.548,-51.573] },
+    { name:'Marialva', pos:[-23.483,-51.510] },
+    { name:'Sarandi', pos:[-23.4405,-51.4380] },
+    { name:'São Pedro do Ivaí', pos:[-23.685,-51.680] },
+    { name:'Floresta', pos:[-23.605,-51.610] },
+  ];
+  towns.forEach(t => {
+    L.circleMarker(t.pos, { radius:0, opacity:0 })
+      .bindTooltip(`<span class="town-label">${t.name}</span>`, {
+        permanent:true, direction:'right', className:'town-tooltip', offset:[2,0]
+      }).addTo(map);
+  });
+
+  const airportIcon = L.divIcon({
+    className:'',
+    html:`<div style="width:22px;height:22px;border-radius:50%;background:#fff;border:2px solid #5B2FE8;display:flex;align-items:center;justify-content:center;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="#5B2FE8"><path d="M12 2C9 2 7 6 7 10c0 2 .5 4 1.2 5.6L2 19l1 2 6.5-2.2c.7.9 1.6 1.7 2.5 2.2.9-.5 1.8-1.3 2.5-2.2L21 21l1-2-6.2-3.4C16.5 14 17 12 17 10c0-4-2-8-5-8z"/></svg>
+          </div>`,
+    iconSize:[22,22], iconAnchor:[11,11]
+  });
+  L.marker([-23.478,-51.6947], { icon: airportIcon })
+    .bindTooltip('Aeroporto Regional de Maringá (MGF)', { direction:'right', className:'town-tooltip' })
+    .addTo(map);
+}
+
+renderCalendar();
+renderMaintList();
+renderUpcoming();
+renderHeaderDate();
+renderRanking();
+renderMap();
+</script>
+</body>
+</html>
