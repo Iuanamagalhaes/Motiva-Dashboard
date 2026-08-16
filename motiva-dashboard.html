@@ -164,6 +164,19 @@
       height: 12px;
     }
 
+    #monthPicker {
+      position: relative;
+    }
+
+    #monthSelect {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+
     #map {
       flex: 1;
       min-height: 560px;
@@ -512,12 +525,15 @@
           <img src="./assets/calendario_roxo.png" alt="calendario-roxo" width="18" height="18">
           Calendário de Manutenções
         </div>
-        <div class="month-picker">
-          Agosto 2026
+        <div class="month-picker" id="monthPicker">
+          <span id="monthLabel">Agosto 2026</span>
+
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
             stroke-linejoin="round">
             <polyline points="6 9 12 15 18 9" />
           </svg>
+
+          <select id="monthSelect" aria-label="Selecionar mês"></select>
         </div>
       </div>
 
@@ -672,8 +688,12 @@
 
     function pad(n) { return n.toString().padStart(2, '0'); }
 
+    let calendarYear = 2026;
+    let calendarMonth = 7;
+
     function renderCalendar() {
-      const year = 2026, month = 7;
+      const year = calendarYear;
+      const month = calendarMonth;
       const firstDay = new Date(year, month, 1).getDay();
       const daysInMonth = new Date(year, month + 1, 0).getDate();
       const daysInPrevMonth = new Date(year, month, 0).getDate();
@@ -719,6 +739,81 @@
       const [y, m, d] = dateKey.split('-').map(Number);
       return `${d} de ${meses[m - 1].charAt(0).toUpperCase() + meses[m - 1].slice(1)}, ${y}`;
     }
+
+    function updateMonthLabel() {
+      const meses = [
+        'Janeiro',
+        'Fevereiro',
+        'Março',
+        'Abril',
+        'Maio',
+        'Junho',
+        'Julho',
+        'Agosto',
+        'Setembro',
+        'Outubro',
+        'Novembro',
+        'Dezembro'
+      ];
+      document.getElementById('monthLabel').textContent =
+        `${meses[calendarMonth]} ${calendarYear}`;
+    }
+
+
+    function populateMonthSelect() {
+      const select = document.getElementById('monthSelect');
+      select.innerHTML = '';
+
+      for (let year = 2021; year <= 2031; year++) {
+        for (let month = 0; month < 12; month++) {
+          const option = document.createElement('option');
+          option.value = `${year}-${month}`;
+
+          const meses = [
+            'Janeiro',
+            'Fevereiro',
+            'Março',
+            'Abril',
+            'Maio',
+            'Junho',
+            'Julho',
+            'Agosto',
+            'Setembro',
+            'Outubro',
+            'Novembro',
+            'Dezembro'
+          ];
+
+          option.textContent = `${meses[month]} ${year}`;
+          if (year === calendarYear && month === calendarMonth) {
+            option.selected = true;
+          }
+          select.appendChild(option);
+        }
+      }
+    }
+
+    function changeMonth(year, month) {
+
+      calendarYear = year;
+      calendarMonth = month;
+
+      selectedDate =
+        `${calendarYear}-${pad(calendarMonth + 1)}-01`;
+
+      updateMonthLabel();
+
+      renderCalendar();
+      renderMaintList();
+      renderUpcoming();
+      renderHeaderDate();
+
+    }
+
+    document.getElementById('monthSelect').addEventListener('change', function () {
+      const [year, month] = this.value.split('-').map(Number);
+      changeMonth(year, month);
+    });
 
     function renderMaintList() {
       document.getElementById('sideDate').textContent = formatShort(selectedDate);
@@ -816,6 +911,9 @@
         .bindTooltip('Aeroporto de Sorocaba', { direction: 'right', className: 'town-tooltip' })
         .addTo(map);
     }
+
+    populateMonthSelect();
+    updateMonthLabel();
 
     renderCalendar();
     renderMaintList();
