@@ -217,10 +217,7 @@
     <img src="./assets/motiva-logo.png" alt="motiva-logo">
   </div>
   <div class="header-date">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/>
-      <rect x="3" y="4" width="18" height="18" rx="3"/><line x1="3" y1="10" x2="21" y2="10"/>
-    </svg>
+    <img src="./assets/calendario_preto.png" alt="calendario-preto" width="16" height="16">
     <span id="headerDate">17 de Agosto, 2026</span>
   </div>
   <div style="width:26px;"></div>
@@ -231,9 +228,7 @@
   <section class="card card-map">
     <div class="card-title">
       <div class="card-title-left dark">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2V6z"/><path d="M9 4v14"/><path d="M15 6v18"/>
-        </svg>
+        <img src="./assets/mapa_roxo.png" alt="mapa-roxo" width="18" height="18">
         Mapa de Criticidade por Trecho
       </div>
     </div>
@@ -248,10 +243,7 @@
   <section class="card card-cal">
     <div class="card-title">
       <div class="card-title-left violet">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/>
-          <rect x="3" y="4" width="18" height="18" rx="3"/><line x1="3" y1="10" x2="21" y2="10"/>
-        </svg>
+        <img src="./assets/calendario_roxo.png" alt="calendario-roxo" width="18" height="18">
         Calendário de Manutenções
       </div>
       <div class="month-picker">
@@ -281,11 +273,7 @@
   <section class="card card-rank">
     <div class="card-title">
       <div class="card-title-left violet">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2l1.6 3.3 3.6.5-2.6 2.5.6 3.6L12 10.2 8.8 11.9l.6-3.6-2.6-2.5 3.6-.5L12 2z"/>
-          <line x1="3" y1="20" x2="21" y2="20"/>
-          <rect x="5" y="14" width="4" height="6"/><rect x="10" y="10" width="4" height="10"/><rect x="15" y="14" width="4" height="6"/>
-        </svg>
+        <img src="./assets/ranking_roxo.png" alt="ranking-roxo" height="18">
         Ranking de Criticidade
       </div>
     </div>
@@ -342,22 +330,43 @@ function fetchRankingData(){
 
 function fetchRouteData(){
   return [
+
     { status:'media', coords: [
-        [-23.6013,-51.6414], [-23.5900,-51.6280], [-23.5760,-51.6120], [-23.5620,-51.5980]
+        [-23.3500,-48.1500],
+        [-23.3650,-48.1750],
+        [-23.3800,-48.2000],
+        [-23.3950,-48.2250]
     ]},
+
     { status:'alta', coords: [
-        [-23.5620,-51.5980], [-23.5470,-51.5820], [-23.5320,-51.5660], [-23.5150,-51.5480],
-        [-23.4990,-51.5300], [-23.4850,-51.5130]
+        [-23.3950,-48.2250],
+        [-23.4100,-48.2500],
+        [-23.4250,-48.2750],
+        [-23.4400,-48.3000],
+        [-23.4550,-48.3250]
     ]},
+
     { status:'alta', coords: [
-        [-23.4850,-51.5130], [-23.4720,-51.4970], [-23.4600,-51.4820]
+        [-23.4550,-48.3250],
+        [-23.4800,-48.3000],
+        [-23.5050,-48.2750],
+        [-23.5300,-48.2500]
     ]},
+
     { status:'media', coords: [
-        [-23.4600,-51.4820], [-23.4520,-51.4680], [-23.4460,-51.4540]
+        [-23.5300,-48.2500],
+        [-23.5550,-48.2750],
+        [-23.5800,-48.3000],
+        [-23.6050,-48.3250]
     ]},
+
     { status:'baixa', coords: [
-        [-23.4460,-51.4540], [-23.4405,-51.4380], [-23.4380,-51.4230]
-    ]},
+        [-23.6050,-48.3250],
+        [-23.6300,-48.3500],
+        [-23.6550,-48.3750],
+        [-23.6800,-48.4000]
+    ]}
+
   ];
 }
 
@@ -468,7 +477,7 @@ function renderRanking(){
 }
 
 function renderMap(){
-  const map = L.map('map', { scrollWheelZoom:false }).setView([-23.51, -51.52], 10.3);
+  const map = L.map('map', { scrollWheelZoom:false }).setView([-23.52, -48.30], 8.5);
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
@@ -493,14 +502,13 @@ function renderMap(){
     });
   });
 
-  const towns = [
-    { name:'Jandaia do Sul', pos:[-23.6013,-51.6414] },
-    { name:'Mandaguari', pos:[-23.548,-51.573] },
-    { name:'Marialva', pos:[-23.483,-51.510] },
-    { name:'Sarandi', pos:[-23.4405,-51.4380] },
-    { name:'São Pedro do Ivaí', pos:[-23.685,-51.680] },
-    { name:'Floresta', pos:[-23.605,-51.610] },
-  ];
+const towns = [
+  { name:'SP-280 — Castello Branco', pos:[-23.3500,-48.1500] },
+  { name:'SP-280 — Castello Branco', pos:[-23.4250,-48.2750] },
+  { name:'SP-127', pos:[-23.5050,-48.2750] },
+  { name:'SP-270 — Raposo Tavares', pos:[-23.5800,-48.3000] },
+  { name:'SP-258', pos:[-23.6300,-48.3500] },
+];
   towns.forEach(t => {
     L.circleMarker(t.pos, { radius:0, opacity:0 })
       .bindTooltip(`<span class="town-label">${t.name}</span>`, {
@@ -515,9 +523,9 @@ function renderMap(){
           </div>`,
     iconSize:[22,22], iconAnchor:[11,11]
   });
-  L.marker([-23.478,-51.6947], { icon: airportIcon })
-    .bindTooltip('Aeroporto Regional de Maringá (MGF)', { direction:'right', className:'town-tooltip' })
-    .addTo(map);
+L.marker([-23.4789,-47.4900], { icon: airportIcon })
+  .bindTooltip('Aeroporto de Sorocaba', { direction:'right', className:'town-tooltip' })
+  .addTo(map);
 }
 
 renderCalendar();
